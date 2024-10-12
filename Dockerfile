@@ -1,11 +1,23 @@
-FROM debian:bookworm-slim
+FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y nut && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Installer des dépendances système nécessaires pour PyNUT (Network UPS Tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nut-client \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY entrypoint.sh /entrypoint.sh
+# Définir le répertoire de travail
+WORKDIR /app
 
-RUN chmod +x /entrypoint.sh
+# Copier le fichier requirements.txt et installer les dépendances Python
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+# Copier le script dans le conteneur
+COPY ups-auto-shutdown.py ups-auto-shutdwon.py
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python", "ups-auto-shutdwon.py"]

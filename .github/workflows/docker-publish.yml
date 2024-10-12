@@ -6,11 +6,11 @@ on:
     - cron: '0 4 * * *'
   # Trigger on pushes to the main branch and version tags
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
     tags: [ 'v*.*.*' ]
   # Trigger on pull requests to the master branch
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 env:
   # Define the Docker registry, defaulting to Docker Hub
