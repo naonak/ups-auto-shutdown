@@ -1,57 +1,149 @@
-# naonak/ups-auto-shutdown
+# UPS Auto Shutdown
 
-This Docker image is designed to monitor the status of an Uninterruptible Power Supply (UPS) using the Network UPS Tools (NUT) and automatically shutdown the host machine in case of power failure or if the battery falls below certain thresholds. Perfect for Raspberry Pi.
+## Description
+
+**UPS Auto Shutdown** is a Python script that uses the **PyNUTClient** library to monitor the status of an uninterruptible power supply (UPS) via a NUT (Network UPS Tools) server. It triggers actions like system shutdown or sending notifications when the UPS battery is low, the load is too high, or the main power is lost.
+
+The script supports alerts via email and [Apprise](https://github.com/caronc/apprise) for sending notifications to multiple platforms.
 
 ## Features
 
-- **Automatic UPS Monitoring**: Continuously monitors the UPS battery charge and runtime.
-- **Host Machine Shutdown**: Triggers a safe shutdown of the host system when the battery is low or a power outage is detected.
-- **Verbose Logging**: Provides detailed logs when the `VERBOSE_MODE` is enabled.
-- **Failure Tolerance**: Handles temporary failures in UPS communication, with a configurable number of retries.
-- **Customizable Thresholds**: Allows setting custom battery runtime and charge level thresholds.
+- Monitors UPS battery and load status.
+- Triggers a safe shutdown when the battery is low or the runtime is short.
+- Sends alert notifications via email and Apprise.
+- Supports **dry-run** mode to test without executing an actual shutdown.
+- Customizable via environment variables or command-line arguments. **Command-line arguments take priority over environment variables**.
+
+## Requirements
+
+- Python 3.x
+- Running NUT server accessible from the script
+- Python libraries:
+  - `PyNUTClient`
+  - `apprise`
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/your-username/ups-auto-shutdown.git
+cd ups-auto-shutdown
+```
+
+2. Create a virtual environment and install dependencies:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+3. (Optional) If you're using **Docker**, you can configure the container using the `docker-compose.yml` file.
 
 ## Usage
 
-To use this image, you need to have a UPS configured with NUT accessible from the host where the Docker container will be running. Here's an example of how you can run the container with the required parameters:
+### Running with Python
+
+You can run the script using command-line arguments or environment variables. **Command-line arguments will override the values provided by environment variables**.
+
+#### Basic example:
+
+```bash
+python ups-auto-shutdwon.py --ups-address localhost --ups-name ups --check-interval 60
+```
+
+#### Example with **dry-run** (simulates execution without performing shutdown):
+
+```bash
+python ups-auto-shutdwon.py --dry-run
+```
+
+### Available Arguments
+
+- `--battery-runtime-low`: Low battery runtime threshold (in seconds).
+- `--battery-low`: Low battery charge threshold (in percentage).
+- `--ups-address`: NUT server address (default: `localhost`).
+- `--ups-port`: NUT server port (default: `3493`).
+- `--ups-name`: UPS name as listed in NUT (default: `ups`).
+- `--load-threshold`: Load threshold (in percentage) to trigger a load warning.
+- `--shutdown-cmd`: Custom shutdown command (default: `systemctl --no-pager halt`).
+- `--max-fails`: Maximum consecutive failures before stopping the script.
+- `--check-interval`: Interval between checks in seconds (default: 60).
+- `--dry-run`: Enable simulation mode (no actual actions like shutdown are performed).
+- `--alert-apprise-url`: Apprise URL for notifications.
+- `--alert-smtp-server`: SMTP server for email alerts.
+- `--alert-smtp-user`: SMTP user for email alerts.
+- `--alert-smtp-password`: SMTP password for email alerts.
+- `--alert-email-recipient`: Email recipient for alerts.
+
+### Running with Docker
+
+#### Docker Compose
+
+A `docker-compose.yml` file is included for easy Docker configuration.
 
 ```yaml
 version: '3'
 services:
   ups-auto-shutdown:
-    image: naonak/ups-auto-shutdown:latest
-    container_name: ups-auto-shutdown
+    image: ghcr.io/your-username/ups-auto-shutdown:main
     restart: unless-stopped
+    volumes:
+      - /run/systemd:/run/systemd:ro
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
     cap_add:
       - SYS_BOOT
-    volumes:
-      - /run/systemd:/run/systemd
-      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket
     environment:
-      - UPS_NAME=your_ups_name
-      - UPS_ADDRESS=your_ups_address:port
-      - SHUTDOWN_CMD=systemctl --no-pager halt
-      - BATTERY_RUNTIME_LOW=240
-      - BATTERY_LOW=15
-      - CHECK_INTERVAL=60
-      - VERBOSE_MODE=true
-      - MAX_FAILS=3
+      UPS_ADDRESS: "192.168.0.11"
+      UPS_PORT: "3493"
+      UPS_NAME: "ups"
+      BATTERY_RUNTIME_LOW: 240
+      BATTERY_LOW: 15
+      SHUTDOWN_CMD: "systemctl --no-pager halt"
+      CHECK_INTERVAL: 60
+      MAX_FAILS: 3
+      LOAD_THRESHOLD: 80
+      DRY_RUN: "true"
+      VERBOSITY: "DEBUG"
+      ALERT_SMTP_SERVER: smtp.example.com
+      ALERT_SMTP_USER: user@example.com
+      ALERT_SMTP_PASSWORD: yourpassword
+      ALERT_EMAIL_RECIPIENT: admin@example.com
+      ALERT_APPRISE_URL: apprise://your-apprise-url
 ```
 
-Replace `your_ups_name` and `your_ups_address:port` with the actual UPS name and address.
+### Notifications
 
-## Environment Variables
+The script supports notifications via Apprise and SMTP email alerts.
 
-- `UPS_NAME`: The name of the UPS as configured in NUT.
-- `UPS_ADDRESS`: The network address of the UPS server (NUT server).
-- `SHUTDOWN_CMD`: Command to shut down the host machine; defaults to `systemctl --no-pager halt`.
-- `BATTERY_RUNTIME_LOW`: The runtime threshold (in seconds) before a shutdown is initiated; defaults to `240`.
-- `BATTERY_LOW`: The battery charge threshold before a shutdown is initiated; defaults to `15`.
-- `CHECK_INTERVAL`: How often (in seconds) to check the UPS status; defaults to `60`.
-- `VERBOSE_MODE`: Set to `true` for verbose logging.
-- `MAX_FAILS`: Number of allowed consecutive UPS communication failures before stopping the script; defaults to `3`.
+#### Example with Apprise
+
+Add your Apprise URL to send notifications to platforms like Discord, Slack, etc.
+
+```bash
+python ups-auto-shutdwon.py --alert-apprise-url "discord://webhook_id/webhook_token"
+```
+
+#### Example with Email
+
+Set up email alerts using an SMTP server:
+
+```bash
+python ups-auto-shutdwon.py \
+  --alert-smtp-server smtp.example.com \
+  --alert-smtp-user user@example.com \
+  --alert-smtp-password password \
+  --alert-email-recipient recipient@example.com
+```
 
 ## Notes
 
 - Ensure that your host system's `systemctl` command can be invoked from within the container.
 - The image uses the `systemctl --no-pager halt` command for shutdown by default, which requires the container to run with certain privileges.
 - It's important to test this setup in a controlled environment before deploying it on a production system to ensure that the host machine shuts down gracefully.
+
+## License
+
+This project is licensed under the MIT License.
+
