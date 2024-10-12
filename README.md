@@ -95,22 +95,22 @@ services:
     cap_add:
       - SYS_BOOT
     environment:
-      UPS_ADDRESS: "192.168.0.11"
-      UPS_PORT: "3493"
-      UPS_NAME: "ups"
-      BATTERY_RUNTIME_LOW: 240
-      BATTERY_LOW: 15
-      SHUTDOWN_CMD: "systemctl --no-pager halt"
-      CHECK_INTERVAL: 60
-      MAX_FAILS: 3
-      LOAD_THRESHOLD: 80
-      DRY_RUN: "true"
-      VERBOSITY: "DEBUG"
-      ALERT_SMTP_SERVER: smtp.example.com
-      ALERT_SMTP_USER: user@example.com
-      ALERT_SMTP_PASSWORD: yourpassword
-      ALERT_EMAIL_RECIPIENT: admin@example.com
-      ALERT_APPRISE_URL: apprise://your-apprise-url
+      - UPS_ADDRESS=your-ups-ip
+      - UPS_PORT=3493
+      - UPS_NAME=ups
+      - BATTERY_RUNTIME_LOW=240
+      - BATTERY_LOW=15
+      - SHUTDOWN_CMD=systemctl --no-pager halt
+      - CHECK_INTERVAL=60
+      - MAX_FAILS=3
+      - LOAD_THRESHOLD=80
+      - DRY_RUN=true
+      - VERBOSITY=DEBUG
+      - ALERT_SMTP_SERVER=smtp.example.com
+      - ALERT_SMTP_USER=user@example.com
+      - ALERT_SMTP_PASSWORD=yourpassword
+      - ALERT_EMAIL_RECIPIENT=admin@example.com
+      - ALERT_APPRISE_URL=apprise://your-apprise-url
 ```
 
 ### Notifications
