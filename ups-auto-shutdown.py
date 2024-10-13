@@ -124,6 +124,7 @@ def monitor_ups(battery_runtime_low, battery_low, ups_address, ups_name, ups_por
     """Monitors the UPS status in an infinite loop using PyNUTClient."""
     fail_count = 0
     client = PyNUTClient(host=ups_address, port=ups_port)
+    previous_ups_status = None
 
     while True:
         try:
@@ -165,6 +166,16 @@ def monitor_ups(battery_runtime_low, battery_low, ups_address, ups_name, ups_por
             logging.error(message)
             send_alert_email(subject="UPS Power Outage", body=message, smtp_server=smtp_server, smtp_user=smtp_user, smtp_password=smtp_password, recipient=recipient)
             send_apprise_alert(body=message, apprise_url=apprise_url)
+
+        # Check if the electricity is back (UPS back online)
+        if previous_ups_status.startswith("OB") and ups_status_value.startswith("OL"):
+            message = "Power restored. UPS is back online."
+            logging.info(message)
+            send_alert_email(subject="Power Restored", body=message, smtp_server=smtp_server, smtp_user=smtp_user, smtp_password=smtp_password, recipient=recipient)
+            send_apprise_alert(body=message, apprise_url=apprise_url)
+
+        # Store the current UPS status for the next loop iteration
+        previous_ups_status = ups_status_value
 
         # Check if the battery charge or runtime is below the thresholds
         if battery_charge <= battery_low or battery_runtime <= battery_runtime_low:
