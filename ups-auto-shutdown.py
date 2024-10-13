@@ -168,7 +168,7 @@ def monitor_ups(battery_runtime_low, battery_low, ups_address, ups_name, ups_por
             send_apprise_alert(body=message, apprise_url=apprise_url)
 
         # Check if the electricity is back (UPS back online)
-	if previous_ups_status is not None and previous_ups_status.startswith("OB") and ups_status_value.startswith("OL"):
+        if previous_ups_status is not None and previous_ups_status.startswith("OB") and ups_status_value.startswith("OL"):
             message = "Power restored. UPS is back online."
             logging.info(message)
             send_alert_email(subject="Power Restored", body=message, smtp_server=smtp_server, smtp_user=smtp_user, smtp_password=smtp_password, recipient=recipient)
