@@ -1,2 +1,3 @@
 apprise
 PyNUTClient
+telnetlib-313-and-up
