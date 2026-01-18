@@ -27,7 +27,7 @@ The script supports alerts via email and [Apprise](https://github.com/caronc/app
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/ups-auto-shutdown.git
+git clone https://github.com/naonak/ups-auto-shutdown.git
 cd ups-auto-shutdown
 ```
 
@@ -50,13 +50,13 @@ You can run the script using command-line arguments or environment variables. **
 #### Basic example:
 
 ```bash
-python ups-auto-shutdwon.py --ups-address localhost --ups-name ups --check-interval 60
+python ups-auto-shutdown.py --ups-address localhost --ups-name ups --check-interval 60
 ```
 
 #### Example with **dry-run** (simulates execution without performing shutdown):
 
 ```bash
-python ups-auto-shutdwon.py --dry-run
+python ups-auto-shutdown.py --dry-run
 ```
 
 ### Available Arguments
@@ -122,7 +122,7 @@ The script supports notifications via Apprise and SMTP email alerts.
 Add your Apprise URL to send notifications to platforms like Discord, Slack, etc.
 
 ```bash
-python ups-auto-shutdwon.py --alert-apprise-url "discord://webhook_id/webhook_token"
+python ups-auto-shutdown.py --alert-apprise-url "discord://webhook_id/webhook_token"
 ```
 
 #### Example with Email
@@ -130,7 +130,7 @@ python ups-auto-shutdwon.py --alert-apprise-url "discord://webhook_id/webhook_to
 Set up email alerts using an SMTP server:
 
 ```bash
-python ups-auto-shutdwon.py \
+python ups-auto-shutdown.py \
   --alert-smtp-server smtp.example.com \
   --alert-smtp-user user@example.com \
   --alert-smtp-password password \
