@@ -49,7 +49,7 @@ jobs:
       # Step 4: Extract Docker metadata such as tags and labels
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
