@@ -241,7 +241,7 @@ if __name__ == "__main__":
         ups_port=args.ups_port,  # Ajout du port personnalisable
         load_threshold=args.load_threshold,  # Seuil de surcharge
         shutdown_cmd=args.shutdown_cmd,
-        dry_run=args.dry_run,  # Ajout du paramètre dry_run
+        dry_run=dry_run,  # CLI flag or DRY_RUN env
         max_fails=args.max_fails,
         check_interval=args.check_interval,
         apprise_url=args.alert_apprise_url,
