@@ -84,7 +84,7 @@ def parse_arguments():
     parser.add_argument('--ups-name', type=str, default=DEFAULT_UPS_NAME,
                         help=f'UPS name as listed in NUT (default: "ups" or from UPS_NAME environment variable)')
     parser.add_argument('--load-threshold', type=int, default=DEFAULT_LOAD_THRESHOLD,
-                        help=f'Threshold for UPS load percentage to trigger alert (default: {DEFAULT_LOAD_THRESHOLD}%)')  # Seuil de surcharge
+                        help=f'Threshold for UPS load percentage to trigger alert (default: {DEFAULT_LOAD_THRESHOLD}%%)')  # Seuil de surcharge
     parser.add_argument('--shutdown-cmd', type=str, default=DEFAULT_SHUTDOWN_CMD,
                         help=f'Custom shutdown command (default: "{DEFAULT_SHUTDOWN_CMD}")')
     parser.add_argument('--max-fails', type=int, default=DEFAULT_MAX_FAILS,
