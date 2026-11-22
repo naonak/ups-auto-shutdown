@@ -52,6 +52,7 @@ DEFAULT_MAX_FAILS = int(os.getenv('MAX_FAILS', 3))
 DEFAULT_CHECK_INTERVAL = int(os.getenv('CHECK_INTERVAL', 60))
 DEFAULT_LOAD_THRESHOLD = int(os.getenv('LOAD_THRESHOLD', 80))  # Ajout de la surcharge par défaut (80%)
 DEFAULT_VERBOSITY = os.getenv('VERBOSITY', 'ERROR').upper()
+DEFAULT_TIMED_SHUTDOWN = int(os.getenv('TIMED_SHUTDOWN', 0))  # Seconds on battery before shutdown (0 = disabled)
 DEFAULT_DRY_RUN = os.getenv('DRY_RUN', 'false').lower() in ['true', '1', 'yes']  # Variable d'environnement pour dry-run
 
 # Allowed verbosity levels
@@ -93,6 +94,8 @@ def parse_arguments():
                         help=f'Check interval in seconds (default: {DEFAULT_CHECK_INTERVAL})')
     parser.add_argument('--verbose', type=str, choices=VERBOSITY_LEVELS,
                         help=f'Set verbosity level: {", ".join(VERBOSITY_LEVELS)} (default: {DEFAULT_VERBOSITY})')
+    parser.add_argument('--timed-shutdown', type=int, default=DEFAULT_TIMED_SHUTDOWN,
+                        help=f'Shut down after this many seconds continuously on battery, whatever the charge; 0 disables it (default: {DEFAULT_TIMED_SHUTDOWN})')
     parser.add_argument('--dry-run', action='store_true', help='Enable dry run mode where no shutdown command is executed')  # Ajout de dry-run
 
     # Arguments for email and Apprise notifications
@@ -105,9 +108,9 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def trigger_shutdown(shutdown_cmd, dry_run=False, apprise_url=None, smtp_server=None, smtp_user=None, smtp_password=None, recipient=None):
+def trigger_shutdown(shutdown_cmd, dry_run=False, apprise_url=None, smtp_server=None, smtp_user=None, smtp_password=None, recipient=None,
+                     message="Battery level or runtime is too low - triggering host machine shutdown"):
     """Triggers the system shutdown using the custom command."""
-    message = "Battery level or runtime is too low - triggering host machine shutdown"
     logging.error(message)
 
     # Send alerts before shutdown
@@ -120,11 +123,12 @@ def trigger_shutdown(shutdown_cmd, dry_run=False, apprise_url=None, smtp_server=
         os.system(shutdown_cmd)
 
 
-def monitor_ups(battery_runtime_low, battery_low, ups_address, ups_name, ups_port, load_threshold, shutdown_cmd, dry_run, max_fails, check_interval, apprise_url, smtp_server, smtp_user, smtp_password, recipient):
+def monitor_ups(battery_runtime_low, battery_low, ups_address, ups_name, ups_port, load_threshold, shutdown_cmd, dry_run, max_fails, check_interval, apprise_url, smtp_server, smtp_user, smtp_password, recipient, timed_shutdown=0):
     """Monitors the UPS status in an infinite loop using PyNUTClient."""
     fail_count = 0
     client = PyNUTClient(host=ups_address, port=ups_port)
     previous_ups_status = None
+    on_battery_since = None  # monotonic time when the UPS went on battery (OB)
 
     while True:
         try:
@@ -177,6 +181,20 @@ def monitor_ups(battery_runtime_low, battery_low, ups_address, ups_name, ups_por
         # Store the current UPS status for the next loop iteration
         previous_ups_status = ups_status_value
 
+        # Timed shutdown: shut down after a fixed time on battery, whatever the charge
+        if ups_status_value.startswith("OB"):
+            if on_battery_since is None:
+                on_battery_since = time.monotonic()
+                if timed_shutdown > 0:
+                    logging.warning(f"On battery: shutdown scheduled in {timed_shutdown} seconds unless power is restored.")
+            elapsed = time.monotonic() - on_battery_since
+            if timed_shutdown > 0 and elapsed >= timed_shutdown:
+                trigger_shutdown(shutdown_cmd, dry_run, apprise_url, smtp_server, smtp_user, smtp_password, recipient,
+                                 message=f"On battery for {int(elapsed)} seconds (TIMED_SHUTDOWN={timed_shutdown}) - triggering host machine shutdown")
+                break
+        else:
+            on_battery_since = None
+
         # Check if the battery charge or runtime is below the thresholds
         if battery_charge <= battery_low or battery_runtime <= battery_runtime_low:
             trigger_shutdown(shutdown_cmd, dry_run, apprise_url, smtp_server, smtp_user, smtp_password, recipient)
@@ -223,12 +241,13 @@ if __name__ == "__main__":
         ups_port=args.ups_port,  # Ajout du port personnalisable
         load_threshold=args.load_threshold,  # Seuil de surcharge
         shutdown_cmd=args.shutdown_cmd,
-        dry_run=args.dry_run,  # Ajout du paramètre dry_run
+        dry_run=dry_run,  # CLI flag or DRY_RUN env
         max_fails=args.max_fails,
         check_interval=args.check_interval,
         apprise_url=args.alert_apprise_url,
         smtp_server=args.alert_smtp_server,
         smtp_user=args.alert_smtp_user,
         smtp_password=args.alert_smtp_password,
-        recipient=args.alert_email_recipient
+        recipient=args.alert_email_recipient,
+        timed_shutdown=args.timed_shutdown
     )
