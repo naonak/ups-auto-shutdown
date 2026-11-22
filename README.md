@@ -70,6 +70,7 @@ python ups-auto-shutdown.py --dry-run
 - `--shutdown-cmd`: Custom shutdown command (default: `systemctl --no-pager halt`).
 - `--max-fails`: Maximum consecutive failures before stopping the script.
 - `--check-interval`: Interval between checks in seconds (default: 60).
+- `--timed-shutdown`: Shut down after this many seconds continuously on battery, whatever the battery charge (`0` = disabled, default). Env: `TIMED_SHUTDOWN`. Example: `TIMED_SHUTDOWN=240` shuts down 4 minutes after a power outage if power is not restored. The delay is checked every `--check-interval`, so the shutdown happens up to one interval later.
 - `--dry-run`: Enable simulation mode (no actual actions like shutdown are performed).
 - `--alert-apprise-url`: Apprise URL for notifications.
 - `--alert-smtp-server`: SMTP server for email alerts.
@@ -104,6 +105,7 @@ services:
       - CHECK_INTERVAL=60
       - MAX_FAILS=3
       - LOAD_THRESHOLD=80
+      - TIMED_SHUTDOWN=0   # e.g. 240 = shut down after 4 minutes on battery
       - DRY_RUN=true
       - VERBOSITY=DEBUG
       - ALERT_SMTP_SERVER=smtp.example.com
